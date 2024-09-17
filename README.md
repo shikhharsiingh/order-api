@@ -25,7 +25,12 @@ This is an implementation of an order book with a simple UI and WebSocket-based 
 - `/ws/order_book`: Real-time order book updates
 - `/ws/{client_id}`: Client-specific WebSocket connection
 
-## Setup
+## Running through docker (recommended)
+
+`docker-compose up --build`  
+The server will start on `http://0.0.0.0:8000`.
+
+## Traditional Setup
 
 1. Install dependencies (FastAPI, Redis, etc.)
 2. Set up a Redis server
