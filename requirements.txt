@@ -1,0 +1,6 @@
+uvicorn
+fastapi
+redis
+websockets
+wsproto
+uvicorn[standard]

@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order API Tester</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+
+<body>
+    <h1>Order API Tester</h1>
+
+    <h2>Place Order</h2>
+    <form id="placeOrderForm">
+        <input type="number" id="quantity" placeholder="Quantity" required min="0">
+        <input type="number" id="price" step="0.01" placeholder="Price" required min="0">
+        <select id="side" required>
+            <option value="-1">Buy</option>
+            <option value="1">Sell</option>
+        </select>
+        <button type="submit">Place Order</button>
+    </form>
+
+    <h2>Modify Order</h2>
+    <form id="modifyOrderForm">
+        <input type="text" id="modifyOrderId" placeholder="Order ID" required>
+        <input type="number" id="updatedPrice" step="0.01" placeholder="Updated Price" required min="0">
+        <button type="submit">Modify Order</button>
+    </form>
+
+    <h2>Cancel Order</h2>
+    <form id="cancelOrderForm">
+        <input type="text" id="cancelOrderId" placeholder="Order ID" required>
+        <button type="submit">Cancel Order</button>
+    </form>
+
+    <h2>Fetch Order</h2>
+    <form id="fetchOrderForm">
+        <input type="text" id="fetchOrderId" placeholder="Order ID" required>
+        <button type="submit">Fetch Order</button>
+    </form>
+
+    <h2>Get All Orders</h2>
+    <button onclick="getAllOrders()">Get All Orders</button>
+    <div id="allOrdersResult"></div>
+
+    <h2>Get All Trades</h2>
+    <button onclick="getAllTrades()">Get All Trades</button>
+    <div id="allTradesResult"></div>
+
+    <h2>Order Book</h2>
+    <div id="order-book">
+        <div id="bids">
+            <h3>Bids</h3>
+            <table id="bids-table">
+                <tr>
+                    <th>Price</th>
+                    <th>Quantity</th>
+                </tr>
+            </table>
+        </div>
+        <div id="asks">
+            <h3>Asks</h3>
+            <table id="asks-table">
+                <tr>
+                    <th>Price</th>
+                    <th>Quantity</th>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <h2>Trade Updates</h2>
+    <div id="wsUpdates"></div>
+
+    <script>
+        $(document).ready(function () {
+            const clientId = 'client_' + Math.random().toString(36).substr(2, 9);
+            const orderUpdateSocket = new WebSocket('ws://' + window.location.host + '/ws/' + clientId);
+
+            orderUpdateSocket.onmessage = function (event) {
+                const data = JSON.parse(event.data);
+                if (data.type == 'trade_update') {
+                    displayOrderUpdate(data);
+                }
+            };
+
+            function displayOrderUpdate(data) {
+                const updateDiv = document.createElement('div');
+                updateDiv.innerHTML = `
+                <h3>Trade Update</h3>
+                <p>Trade ID: ${data.trade.trade_id}</p>
+                <p>Matched Quantity: ${data.trade.quantity}</p>
+                <p>Average Traded Price: ${data.trade.price}</p>
+            `;
+                document.getElementById('wsUpdates').prepend(updateDiv);
+            }
+
+            $('#placeOrderForm').submit(function (e) {
+                e.preventDefault();
+                $.ajax({
+                    url: '/place',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        quantity: parseFloat($('#quantity').val()),
+                        price: parseFloat($('#price').val()),
+                        side: parseInt($('#side').val())
+                    }),
+                    success: function (response) {
+                        alert('Order placed: ' + JSON.stringify(response));
+                    }
+                });
+            });
+
+            $('#modifyOrderForm').submit(function (e) {
+                e.preventDefault();
+                $.ajax({
+                    url: '/modify',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        order_id: $('#modifyOrderId').val(),
+                        updated_price: parseFloat($('#updatedPrice').val())
+                    }),
+                    success: function (response) {
+                        alert('Order modified: ' + JSON.stringify(response));
+                    }
+                });
+            });
+
+            $('#cancelOrderForm').submit(function (e) {
+                e.preventDefault();
+                $.ajax({
+                    url: '/cancel',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        order_id: $('#cancelOrderId').val()
+                    }),
+                    success: function (response) {
+                        alert('Order cancelled: ' + JSON.stringify(response));
+                    }
+                });
+            });
+
+            $('#fetchOrderForm').submit(function (e) {
+                e.preventDefault();
+                $.ajax({
+                    url: '/fetch',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        order_id: $('#fetchOrderId').val()
+                    }),
+                    success: function (response) {
+                        alert('Order fetched: ' + JSON.stringify(response));
+                    }
+                });
+            });
+        });
+
+        function getAllOrders() {
+            $.ajax({
+                url: '/orders',
+                type: 'GET',
+                success: function (data) {
+                    const tableHtml = `
+                        <h3>All Orders</h3>
+                        <table border="1">
+                            <thead>
+                                <tr>
+                                    <th>Order ID</th>
+                                    <th>Price</th>
+                                    <th>Quantity</th>
+                                    <th>Side</th>
+                                    <th>Average Traded Price</th>
+                                    <th>Traded Quantity</th>
+                                    <th>Order Alive</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${data.orders.map(order => `
+                                    <tr>
+                                        <td>${order.order_id}</td>
+                                        <td>${order.price}</td>
+                                        <td>${order.quantity}</td>
+                                        <td>${order.side == 1 ? 'Sell' : 'Buy'}</td>
+                                        <td>${order.average_traded_price}</td>
+                                        <td>${order.traded_quantity}</td>
+                                        <td>${order.order_alive == '1' ? 'Yes' : 'No'}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                    $('#allOrdersResult').html(tableHtml);
+                },
+                error: function (xhr, status, error) {
+                    console.error('Error:', error);
+                }
+            });
+        }
+
+        function getAllTrades() {
+            $.ajax({
+                url: '/trades',
+                type: 'GET',
+                success: function (data) {
+                    console.log(data);
+                    const tableHtml = `
+                        <h3>All Trades</h3>
+                        <table border="1">
+                            <thead>
+                                <tr>
+                                    <th>Trade ID</th>
+                                    <th>Buy Order ID</th>
+                                    <th>Sell Order ID</th>
+                                    <th>Quantity</th>
+                                    <th>Price</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${data.trades.map(trade => `
+                                    <tr>
+                                        <td>${trade.trade_id}</td>
+                                        <td>${trade.buy_order_id}</td>
+                                        <td>${trade.sell_order_id}</td>
+                                        <td>${trade.quantity}</td>
+                                        <td>${trade.price}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                    $('#allTradesResult').html(tableHtml);
+                },
+                error: function (xhr, status, error) {
+                    console.error('Error:', error);
+                }
+            });
+        } const orderBookSocket = new WebSocket('ws://' + window.location.host + '/ws/order_book');
+
+        orderBookSocket.onopen = function () {
+            console.log('WebSocket connection established.');
+        };
+
+        orderBookSocket.onmessage = function (event) {
+            try {
+                const data = JSON.parse(event.data);
+                if (data.type === 'order_book_snapshot') {
+                    updateOrderBook(data.data);
+                }
+            } catch (error) {
+                console.error('Error parsing WebSocket message:', error);
+            }
+        };
+
+        orderBookSocket.onerror = function (error) {
+            console.error('WebSocket error:', error);
+        };
+
+        orderBookSocket.onclose = function () {
+            console.log('WebSocket connection closed.');
+        };
+
+
+        function updateOrderBook(orderBookData) {
+            const bidsTable = document.getElementById('bids-table');
+            const asksTable = document.getElementById('asks-table');
+
+            // Clear existing rows
+            bidsTable.innerHTML = '<tr><th>Price</th><th>Quantity</th></tr>';
+            asksTable.innerHTML = '<tr><th>Price</th><th>Quantity</th></tr>';
+
+            // Add new rows for bids
+            orderBookData.bids.forEach(bid => {
+                const row = bidsTable.insertRow(-1);
+                row.insertCell(0).textContent = bid.price;
+                row.insertCell(1).textContent = bid.quantity;
+            });
+
+            // Add new rows for asks
+            orderBookData.asks.forEach(ask => {
+                const row = asksTable.insertRow(-1);
+                row.insertCell(0).textContent = ask.price;
+                row.insertCell(1).textContent = ask.quantity;
+            });
+        }
+
+    </script>
+</body>
+
+</html>
