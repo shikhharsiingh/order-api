@@ -1,6 +1,6 @@
 # order-api
 
-This is an implementation of an order book with a simple UI and WebSocket-based real-time updates.
+This is an implementation of an order book with a simple UI and WebSocket-based real-time updates. This is a microservice architecture app. 
 
 ## Features
 
@@ -25,12 +25,7 @@ This is an implementation of an order book with a simple UI and WebSocket-based 
 - `/ws/order_book`: Real-time order book updates
 - `/ws/{client_id}`: Client-specific WebSocket connection
 
-## Running through docker (recommended)
-
-`docker-compose up --build`  
-The server will start on `http://0.0.0.0:8000`.
-
-## Traditional Setup
+## Setup
 
 1. Install dependencies (FastAPI, Redis, etc.)
 2. Set up a Redis server
@@ -40,7 +35,7 @@ The server will start on `http://0.0.0.0:8000`.
 
 ## Running the Application
 
-`python backend.py`  
+python backend.py
 The server will start on `http://0.0.0.0:8000`.
 
 ## Frontend
