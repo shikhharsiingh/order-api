@@ -1,3 +1,4 @@
 .pylintrc
 /__pycache__
 *.rdb
+.gitignore

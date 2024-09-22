@@ -4,13 +4,13 @@ from fastapi.websockets import WebSocketDisconnect
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.concurrency import run_in_threadpool
 import redis
 from redis.exceptions import WatchError
 import asyncio
 import copy
 import time
 import os
-import threading
 
 class WebSocketManager:
     def __init__(self):
@@ -52,12 +52,9 @@ websocket_manager = WebSocketManager()
 
 @app.on_event("startup")
 def startup_function():
-    # asyncio.create_task(post_trade_update())
     r.flushall()
     r.set("order_number", 0)
     r.set("trade_number", 0)
-    # thread = threading.Thread(target=post_trade_update, daemon=True)
-    # thread.start()
 
 @app.get("/")
 async def read_index():
@@ -79,31 +76,38 @@ async def order_book_websocket(websocket: WebSocket):
     except WebSocketDisconnect:
         print("WebSocket disconnected")
 
-@app.websocket("/ws/{client_id}")
-async def websocket_endpoint(websocket: WebSocket, client_id: str):
-    await websocket_manager.connect(client_id, websocket)
+async def send_message(websocket: WebSocket, trade):
+    await websocket.send_json({
+        "type": "trade_update",
+        "trade": trade
+    })
+    print("sent trade update")
 
+def handle_trade_updates(websocket: WebSocket):
     pubsub = r.pubsub()
     pubsub.subscribe("trade_updates")
+    print("subscribed to trade_updates")
+    
+    async def listen():
+        for message in pubsub.listen():
+            if message['type'] == 'message':
+                # print(message)
+                trade = r.hgetall(message['data'])
+                # print(trade)
+                
+                await send_message(websocket, trade)
 
-    # try:
-    #     for message in pubsub.listen():
-    #         if message['type'] == 'message':
-    #             trade_id = message['data']
-    #             trade = r.hgetall(trade_id)
-    #             await websocket_manager.broadcast({
-    #                 "type": "trade_update",
-    #                 "data": trade
-    #             })
-    # except WebSocketDisconnect:
-    #     websocket_manager.disconnect(client_id)
-    # finally:
-    #     await pubsub.unsubscribe("trade_updates")
-    #     await pubsub.close()
+    # Run the listening task in the event loop
+    asyncio.run(listen())
+
+@app.websocket("/ws/trade_updates")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    
+    # Run the handle_trade_updates in a background thread
+    await run_in_threadpool(handle_trade_updates, websocket)
 
 def get_queuekey_priority(price: float, side : int):
-    print("price", price)
-    print("side", side)
     if side == 1:
         queue_key = f"s{price}"
         priority = price
@@ -138,7 +142,7 @@ async def place(request: dict):
 
     # Get queue key
     queue_key, priority = get_queuekey_priority(price, side)
-
+    # print("here")
     while True:
         try:
             # Start pipeline
@@ -229,7 +233,7 @@ async def modify(request: dict):
         while True:
             try:
                 with r.pipeline() as pipe:
-                    pipe.watch('push_lock') #Watch matching queue
+                    pipe.watch('push_lock') # If order if alread matched, it cannot be modified
                     pipe.multi() 
                     pipe.set('push_lock', '1')
                     # Set new price
@@ -278,6 +282,7 @@ async def cancel(request: dict):
         return {"error": "Order is no longer active"}, 404
 
     with r.pipeline() as pipe:
+        # pipe.watch(order_id) # If the order is matched, cannot cancel it
         pipe.multi() # Start transaction
 
         pipe.hset(order_id, key="order_alive", value='0')
@@ -290,46 +295,6 @@ async def cancel(request: dict):
         pipe.execute() # Execute transaction
 
     return {"success": True}, 200
-
-# def post_trade_update():
-#     pub = r.pubsub()
-#     pub.subscribe('trade_updates')
-#     for message in pub.listen():
-#         # print("trade message", message["type"])
-#         if message['type'] == 'message':
-#             trade_id = message['data']
-#             print(trade_id)
-#             trade = r.hgetall(trade_id)
-#             trade_quantity = int(trade['quantity'])
-#             trade_price = float(trade['price'])
-#             buy_order_id = trade['buy_order_id']
-#             sell_order_id = trade['sell_order_id']
-
-#             post_trade_update_order(r.hgetall(buy_order_id), trade_quantity, trade_price) # Update buy order
-#             post_trade_update_order(r.hgetall(sell_order_id), trade_quantity, trade_price) # Update sell order
-
-# def post_trade_update_order(order, trade_quantity, trade_price):
-#     order['traded_quantity'] = int(order['traded_quantity'])
-#     order['average_traded_price'] = float(order['average_traded_price'])
-#     order['quantity'] = int(order['quantity'])
-#     order['price'] = float(order['price'])
-
-#     order['average_traded_price'] = (order['average_traded_price'] * order['traded_quantity'] + trade_quantity *  trade_price) / (trade_quantity + order['traded_quantity'])
-#     order['traded_quantity'] += trade_quantity
-
-#     with r.pipeline() as pipe:
-#         pipe.multi()
-#         pipe.hset(order['order_id'], mapping=order)
-    
-#         # Update queue
-#         if order['quantity'] == order['traded_quantity']:
-#             order['order_alive'] = 0
-#             pipe.hset(order['order_id'], "order_alive", 0)
-#             queue, _ = get_queuekey_priority(float(order['price']), int(order['side']))
-#             pipe.lrem(queue, 1, order['order_id'])
-#             if pipe.llen(queue) == 0:
-#                 pipe.zrem(str(order["side"]), queue)
-#         pipe.execute()
 
 @app.post("/fetch")
 async def fetch(request: dict):
@@ -381,7 +346,6 @@ def get_order_book_snapshot():
             sideorders.append({"price": float(price[1:]), "quantity": quantity})
         top5.append(sideorders)
     
-    # print({"bids": top5[0], "asks": top5[1]})
     return {"bids": top5[0], "asks": top5[1]}
 
 if __name__ == '__main__':

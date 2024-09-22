@@ -68,9 +68,9 @@ def process_queue(order, queue, side):
         # Start transaction
         with r.pipeline() as pipe:
             # Create trade
-            trade_counter = r.get("trade_counter")
+            trade_number = r.get("trade_number")
             pipe.multi()
-            trade_id = f"trade_{trade_counter}"
+            trade_id = f"trade_{trade_number}"
             trade = {
                 "trade_id" : trade_id,
                 "buy_order_id": order['order_id'] if side == 1 else opposite_order['order_id'],
@@ -79,7 +79,7 @@ def process_queue(order, queue, side):
                 "price": trade_price,
                 "time" : time.time()
             }
-            pipe.incr("trade_counter")
+            pipe.incr("trade_number")
             pipe.rpush("trades", trade_id)
             pipe.hset(trade_id, mapping=trade)
 
@@ -91,10 +91,11 @@ def process_queue(order, queue, side):
             pipe.execute() # Execute transaction
 
         r.publish("trade_updates", trade_id) # Publish trade update
+        print("trade_update:", trade_id)
 
 def get_queuekey_priority(price: float, side : int):
-    print("price", price)
-    print("side", side)
+    # print("price", price)
+    # print("side", side)
     if side == 1:
         queue_key = f"s{price}"
         priority = price
@@ -102,7 +103,6 @@ def get_queuekey_priority(price: float, side : int):
         queue_key = f"b{price}" #key price is always positive
         priority = -price
     return queue_key, priority
-
 
 def update_order(order, trade_quantity, trade_price):
     order['traded_quantity'] = int(order['traded_quantity'])
