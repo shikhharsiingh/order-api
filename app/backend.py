@@ -35,7 +35,7 @@ class WebSocketManager:
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Or specify the domain from which you're serving your HTML
+    allow_origins=["*"], 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -91,9 +91,7 @@ def handle_trade_updates(websocket: WebSocket):
     async def listen():
         for message in pubsub.listen():
             if message['type'] == 'message':
-                # print(message)
                 trade = r.hgetall(message['data'])
-                # print(trade)
                 
                 await send_message(websocket, trade)
 

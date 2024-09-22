@@ -4,79 +4,148 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Order API Tester</title>
+    <title>Order API Dashboard</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 
 <body>
-    <h1>Order API Tester</h1>
+    <div class="container mt-5">
+        <h1 class="text-center">Order API Dashboard</h1>
 
-    <h2>Place Order</h2>
-    <form id="placeOrderForm">
-        <input type="number" id="quantity" placeholder="Quantity" required min="0">
-        <input type="number" id="price" step="0.01" placeholder="Price" required min="0">
-        <select id="side" required>
-            <option value="-1">Buy</option>
-            <option value="1">Sell</option>
-        </select>
-        <button type="submit">Place Order</button>
-    </form>
-
-    <h2>Modify Order</h2>
-    <form id="modifyOrderForm">
-        <input type="text" id="modifyOrderId" placeholder="Order ID" required>
-        <input type="number" id="updatedPrice" step="0.01" placeholder="Updated Price" required min="0">
-        <button type="submit">Modify Order</button>
-    </form>
-
-    <h2>Cancel Order</h2>
-    <form id="cancelOrderForm">
-        <input type="text" id="cancelOrderId" placeholder="Order ID" required>
-        <button type="submit">Cancel Order</button>
-    </form>
-
-    <h2>Fetch Order</h2>
-    <form id="fetchOrderForm">
-        <input type="text" id="fetchOrderId" placeholder="Order ID" required>
-        <button type="submit">Fetch Order</button>
-    </form>
-
-    <h2>Get All Orders</h2>
-    <button onclick="getAllOrders()">Get All Orders</button>
-    <div id="allOrdersResult"></div>
-
-    <h2>Get All Trades</h2>
-    <button onclick="getAllTrades()">Get All Trades</button>
-    <div id="allTradesResult"></div>
-
-    <h2>Order Book</h2>
-    <div id="order-book">
-        <div id="bids">
-            <h3>Bids</h3>
-            <table id="bids-table">
-                <tr>
-                    <th>Price</th>
-                    <th>Quantity</th>
-                </tr>
-            </table>
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>Place Order</h5>
+            </div>
+            <div class="card-body">
+                <form id="placeOrderForm">
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label for="quantity">Quantity</label>
+                            <input type="number" id="quantity" class="form-control" required min="0">
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label for="price">Price</label>
+                            <input type="number" id="price" class="form-control" step="0.01" required min="0">
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label for="side">Side</label>
+                            <select id="side" class="form-control" required>
+                                <option value="-1">Buy</option>
+                                <option value="1">Sell</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Place Order</button>
+                </form>
+            </div>
         </div>
-        <div id="asks">
-            <h3>Asks</h3>
-            <table id="asks-table">
-                <tr>
-                    <th>Price</th>
-                    <th>Quantity</th>
-                </tr>
-            </table>
+
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>Modify Order</h5>
+            </div>
+            <div class="card-body">
+                <form id="modifyOrderForm">
+                    <div class="form-group">
+                        <label for="modifyOrderId">Order ID</label>
+                        <input type="text" id="modifyOrderId" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="updatedPrice">Updated Price</label>
+                        <input type="number" id="updatedPrice" class="form-control" step="0.01" required min="0">
+                    </div>
+                    <button type="submit" class="btn btn-warning">Modify Order</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>Cancel Order</h5>
+            </div>
+            <div class="card-body">
+                <form id="cancelOrderForm">
+                    <div class="form-group">
+                        <label for="cancelOrderId">Order ID</label>
+                        <input type="text" id="cancelOrderId" class="form-control" required>
+                    </div>
+                    <button type="submit" class="btn btn-danger">Cancel Order</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>Fetch Order</h5>
+            </div>
+            <div class="card-body">
+                <form id="fetchOrderForm">
+                    <div class="form-group">
+                        <label for="fetchOrderId">Order ID</label>
+                        <input type="text" id="fetchOrderId" class="form-control" required>
+                    </div>
+                    <button type="submit" class="btn btn-info">Fetch Order</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="text-center">
+            <button class="btn btn-success" onclick="getAllOrders()">Get All Orders</button>
+            <div id="allOrdersResult" class="mt-3"></div>
+        </div>
+
+        <div class="text-center">
+            <button class="btn btn-secondary" onclick="getAllTrades()">Get All Trades</button>
+            <div id="allTradesResult" class="mt-3"></div>
+        </div>
+
+        <div class="card mb-4 mt-5">
+            <div class="card-header">
+                <h5>Order Book</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Bids</h6>
+                        <table class="table" id="bids-table">
+                            <thead>
+                                <tr>
+                                    <th>Price</th>
+                                    <th>Quantity</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Asks</h6>
+                        <table class="table" id="asks-table">
+                            <thead>
+                                <tr>
+                                    <th>Price</th>
+                                    <th>Quantity</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>Trade Updates</h5>
+            </div>
+            <div class="card-body">
+                <div id="wsUpdates"></div>
+            </div>
         </div>
     </div>
 
-    <h2>Trade Updates</h2>
-    <div id="wsUpdates"></div>
-
     <script>
         $(document).ready(function () {
-            // const clientId = 'client_' + Math.random().toString(36).substr(2, 9);
             const orderUpdateSocket = new WebSocket('ws://' + window.location.host + '/ws/trade_updates');
 
             orderUpdateSocket.onmessage = function (event) {
@@ -87,14 +156,14 @@
             };
 
             function displayOrderUpdate(data) {
-                console.log('Received trade update:', data);
                 const updateDiv = document.createElement('div');
+                updateDiv.className = "alert alert-success";
                 updateDiv.innerHTML = `
-                <h3>Trade Update</h3>
-                <p>Trade ID: ${data.trade.trade_id}</p>
-                <p>Matched Quantity: ${data.trade.quantity}</p>
-                <p>Trade Price: ${data.trade.price}</p>
-            `;
+                    <strong>Trade Update!</strong>
+                    <p>Trade ID: ${data.trade.trade_id}</p>
+                    <p>Matched Quantity: ${data.trade.quantity}</p>
+                    <p>Trade Price: ${data.trade.price}</p>
+                `;
                 document.getElementById('wsUpdates').prepend(updateDiv);
             }
 
@@ -169,7 +238,7 @@
                 success: function (data) {
                     const tableHtml = `
                         <h3>All Orders</h3>
-                        <table border="1">
+                        <table class="table table-bordered">
                             <thead>
                                 <tr>
                                     <th>Order ID</th>
@@ -209,10 +278,9 @@
                 url: '/trades',
                 type: 'GET',
                 success: function (data) {
-                    console.log(data);
                     const tableHtml = `
                         <h3>All Trades</h3>
-                        <table border="1">
+                        <table class="table table-bordered">
                             <thead>
                                 <tr>
                                     <th>Trade ID</th>
@@ -241,11 +309,9 @@
                     console.error('Error:', error);
                 }
             });
-        } const orderBookSocket = new WebSocket('ws://' + window.location.host + '/ws/order_book');
+        }
 
-        orderBookSocket.onopen = function () {
-            console.log('WebSocket connection established.');
-        };
+        const orderBookSocket = new WebSocket('ws://' + window.location.host + '/ws/order_book');
 
         orderBookSocket.onmessage = function (event) {
             try {
@@ -258,38 +324,28 @@
             }
         };
 
-        orderBookSocket.onerror = function (error) {
-            console.error('WebSocket error:', error);
-        };
-
-        orderBookSocket.onclose = function () {
-            console.log('WebSocket connection closed.');
-        };
-
-
         function updateOrderBook(orderBookData) {
-            const bidsTable = document.getElementById('bids-table');
-            const asksTable = document.getElementById('asks-table');
+            const bidsTableBody = document.getElementById('bids-table').getElementsByTagName('tbody')[0];
+            const asksTableBody = document.getElementById('asks-table').getElementsByTagName('tbody')[0];
 
             // Clear existing rows
-            bidsTable.innerHTML = '<tr><th>Price</th><th>Quantity</th></tr>';
-            asksTable.innerHTML = '<tr><th>Price</th><th>Quantity</th></tr>';
+            bidsTableBody.innerHTML = '';
+            asksTableBody.innerHTML = '';
 
             // Add new rows for bids
             orderBookData.bids.forEach(bid => {
-                const row = bidsTable.insertRow(-1);
+                const row = bidsTableBody.insertRow(-1);
                 row.insertCell(0).textContent = bid.price;
                 row.insertCell(1).textContent = bid.quantity;
             });
 
             // Add new rows for asks
             orderBookData.asks.forEach(ask => {
-                const row = asksTable.insertRow(-1);
+                const row = asksTableBody.insertRow(-1);
                 row.insertCell(0).textContent = ask.price;
                 row.insertCell(1).textContent = ask.quantity;
             });
         }
-
     </script>
 </body>
 
