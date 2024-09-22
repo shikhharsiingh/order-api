@@ -9,7 +9,7 @@ import redis
 from redis.exceptions import WatchError
 import asyncio
 import copy
-import time
+from datetime import datetime
 import os
 
 class WebSocketManager:
@@ -155,6 +155,7 @@ async def place(request: dict):
                 pipe.multi() # Start buffering
                 pipe.set('push_lock', '1') # Set lock
                 
+                now = datetime.now()
                 # Order preparation
                 order = {
                     'order_id': order_id,
@@ -164,7 +165,7 @@ async def place(request: dict):
                     "average_traded_price": 0,
                     "traded_quantity": 0,
                     "order_alive": 1,
-                    "timestamp": str(time.time())
+                    "timestamp": now.strftime("%d/%m/%Y %H:%M:%S") + f":{now.microsecond // 1000:03}"
                 }
 
                 pipe.incr('order_number')

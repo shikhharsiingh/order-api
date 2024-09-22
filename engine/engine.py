@@ -1,7 +1,6 @@
 import redis
-import asyncio
-import time
 import os
+from datetime import datetime
 
 redis_host = os.getenv("REDIS_HOST", "localhost")
 redis_port = int(os.getenv("REDIS_PORT", 6379))
@@ -71,13 +70,14 @@ def process_queue(order, queue, side):
             trade_number = r.get("trade_number")
             pipe.multi()
             trade_id = f"trade_{trade_number}"
+            now = datetime.now()
             trade = {
                 "trade_id" : trade_id,
                 "buy_order_id": order['order_id'] if side == 1 else opposite_order['order_id'],
                 "sell_order_id": order['order_id'] if side == -1 else opposite_order['order_id'],
                 "quantity": trade_quantity,
                 "price": trade_price,
-                "time" : time.time()
+                "timestamp" : now.strftime("%d/%m/%Y %H:%M:%S") + f":{now.microsecond // 1000:03}"
             }
             pipe.incr("trade_number")
             pipe.rpush("trades", trade_id)
@@ -86,7 +86,7 @@ def process_queue(order, queue, side):
             update_order(opposite_order, trade_quantity, trade_price)
             update_order(order, trade_quantity, trade_price)
 
-            if opposite_order['quantity'] > total_traded_quantity:
+            if opposite_order['order_alive'] and opposite_order['quantity'] > total_traded_quantity:
                 pipe.lpush(queue, opposite_order['order_id'])
             pipe.execute() # Execute transaction
 

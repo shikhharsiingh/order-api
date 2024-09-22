@@ -7,6 +7,7 @@
     <title>Order API Dashboard</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
 </head>
 
 <body>
@@ -142,6 +143,20 @@
                 <div id="wsUpdates"></div>
             </div>
         </div>
+
+        <div class="toast" id="notificationToast" style="position: fixed; top: 20px; right: 20px; z-index: 1050;"
+            role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <strong class="mr-auto">Notification</strong>
+                <button type="button" class="ml-2 mb-1 close" data-dismiss="toast" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="toast-body" id="toastBody">
+                Your message goes here!
+            </div>
+        </div>
+
     </div>
 
     <script>
@@ -157,14 +172,20 @@
 
             function displayOrderUpdate(data) {
                 const updateDiv = document.createElement('div');
-                updateDiv.className = "alert alert-success";
+                updateDiv.className = "alert alert-success d-flex justify-content-between flex-wrap mb-2 p-2";
                 updateDiv.innerHTML = `
-                    <strong>Trade Update!</strong>
-                    <p>Trade ID: ${data.trade.trade_id}</p>
-                    <p>Matched Quantity: ${data.trade.quantity}</p>
-                    <p>Trade Price: ${data.trade.price}</p>
+                    <div style="flex: 1; min-width: 200px;">Time: ${data.trade.timestamp}</div>
+                    <div style="flex: 1; min-width: 200px;">Trade ID: ${data.trade.trade_id}</div>
+                    <div style="flex: 1; min-width: 200px;">Matched Quantity: ${data.trade.quantity}</div>
+                    <div style="flex: 1; min-width: 200px;">Trade Price: ${data.trade.price}</div>
                 `;
                 document.getElementById('wsUpdates').prepend(updateDiv);
+            }
+
+            function showToast(message) {
+                $('#toastBody').text(message);
+                $('#notificationToast').toast({ delay: 3000 });
+                $('#notificationToast').toast('show');
             }
 
             $('#placeOrderForm').submit(function (e) {
@@ -179,7 +200,7 @@
                         side: parseInt($('#side').val())
                     }),
                     success: function (response) {
-                        alert('Order placed: ' + JSON.stringify(response));
+                        showToast('Order placed: ' + JSON.stringify(response));
                     }
                 });
             });
@@ -195,7 +216,7 @@
                         updated_price: parseFloat($('#updatedPrice').val())
                     }),
                     success: function (response) {
-                        alert('Order modified: ' + JSON.stringify(response));
+                        showToast('Order modified: ' + JSON.stringify(response));
                     }
                 });
             });
@@ -210,7 +231,7 @@
                         order_id: $('#cancelOrderId').val()
                     }),
                     success: function (response) {
-                        alert('Order cancelled: ' + JSON.stringify(response));
+                        showToast('Order cancelled: ' + JSON.stringify(response));
                     }
                 });
             });
@@ -225,7 +246,7 @@
                         order_id: $('#fetchOrderId').val()
                     }),
                     success: function (response) {
-                        alert('Order fetched: ' + JSON.stringify(response));
+                        showToast('Order fetched: ' + JSON.stringify(response));
                     }
                 });
             });
@@ -241,6 +262,7 @@
                         <table class="table table-bordered">
                             <thead>
                                 <tr>
+                                    <th>Timestamp</th>
                                     <th>Order ID</th>
                                     <th>Price</th>
                                     <th>Quantity</th>
@@ -253,6 +275,7 @@
                             <tbody>
                                 ${data.orders.map(order => `
                                     <tr>
+                                        <td>${order.timestamp}</td>
                                         <td>${order.order_id}</td>
                                         <td>${order.price}</td>
                                         <td>${order.quantity}</td>
@@ -283,6 +306,7 @@
                         <table class="table table-bordered">
                             <thead>
                                 <tr>
+                                    <th>Timestamp</th>
                                     <th>Trade ID</th>
                                     <th>Buy Order ID</th>
                                     <th>Sell Order ID</th>
@@ -293,6 +317,7 @@
                             <tbody>
                                 ${data.trades.map(trade => `
                                     <tr>
+                                        <td>${trade.timestamp}</td>
                                         <td>${trade.trade_id}</td>
                                         <td>${trade.buy_order_id}</td>
                                         <td>${trade.sell_order_id}</td>
