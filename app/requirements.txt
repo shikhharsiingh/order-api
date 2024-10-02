@@ -3,4 +3,5 @@ fastapi
 redis
 websockets
 wsproto
+protobuf
 uvicorn[standard]

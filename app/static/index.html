@@ -171,15 +171,22 @@
             };
 
             function displayOrderUpdate(data) {
-                const updateDiv = document.createElement('div');
-                updateDiv.className = "alert alert-success d-flex justify-content-between flex-wrap mb-2 p-2";
-                updateDiv.innerHTML = `
-                    <div style="flex: 1; min-width: 200px;">Time: ${data.trade.timestamp}</div>
-                    <div style="flex: 1; min-width: 200px;">Trade ID: ${data.trade.trade_id}</div>
-                    <div style="flex: 1; min-width: 200px;">Matched Quantity: ${data.trade.quantity}</div>
-                    <div style="flex: 1; min-width: 200px;">Trade Price: ${data.trade.price}</div>
-                `;
-                document.getElementById('wsUpdates').prepend(updateDiv);
+                // Loop through each trade in the trade array
+                console.log(data)
+                console.log(typeof data)
+                console.log(typeof data.trades)
+                console.log(data.trades)
+                data.trades.forEach(trade => {
+                    const updateDiv = document.createElement('div');
+                    updateDiv.className = "alert alert-success d-flex justify-content-between flex-wrap mb-2 p-2";
+                    updateDiv.innerHTML = `
+            <div style="flex: 1; min-width: 200px;">Time: ${trade.timestamp}</div>
+            <div style="flex: 1; min-width: 200px;">Order ID: ${trade.order_id}</div>
+            <div style="flex: 1; min-width: 200px;">Matched Quantity: ${trade.trade_quantity}</div>
+            <div style="flex: 1; min-width: 200px;">Average Trade Price: ${trade.average_traded_price}</div>
+        `;
+                    document.getElementById('wsUpdates').prepend(updateDiv);
+                });
             }
 
             function showToast(message) {

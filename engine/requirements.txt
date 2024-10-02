@@ -1,2 +1,6 @@
 redis
 watchdog
+protobuf
+fastapi
+uvicorn
+fastapi[standard]

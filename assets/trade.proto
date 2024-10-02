@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+message TradeUpdate {
+    string trade_id = 1;
+    string order_id = 2;
+    int32 quantity = 4;
+    float averge_traded_price = 5;
+    string timestamp = 6;
+    bool order_alive = 7;
+}

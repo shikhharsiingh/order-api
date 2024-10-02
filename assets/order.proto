@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+message Order {
+    bytes order_id = 1;
+    int32 quantity = 2;
+    float price = 3;
+    int32 side = 4;
+    float average_traded_price = 5;
+    int32 traded_quantity = 6;
+    bool order_alive = 7;
+    string timestamp = 8;
+}
+
+message OrderPSI{
+    bytes order_id = 1;
+    int32 side = 2;
+    float price = 3;
+}

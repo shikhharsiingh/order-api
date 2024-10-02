@@ -5,23 +5,21 @@ services:
     build: ./app # Build the FastAPI app from the app directory
     depends_on:
       - redis
+      - match_engine
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - PYTHONUNBUFFERED=1
+      - MATCH_ENGINE_URL=http://match_engine:8000 # Internal URL for match_engine
     ports:
-      - "8000:8000" # Expose port 8000 for FastAPI
+      - "8000:8000" # Expose port 8000 for FastAPI (public-facing)
     volumes:
       - ./app:/app # Mount the app directory for live updates
-    command: uvicorn backend:app --host 0.0.0.0 --port 8000 --reload
+    networks:
+      - internal_net
 
   match_engine:
     build: ./engine # Build the Python script from the engine directory
-    develop:
-      watch:
-        - action: rebuild
-          path: ./engine
-          target: /app
     depends_on:
       - redis
     environment:
@@ -30,9 +28,18 @@ services:
       - PYTHONUNBUFFERED=1 # Ensures unbuffered output
     volumes:
       - ./engine:/app # Mount the engine directory for live updates
-    command: python -u engine.py # Run the Python script
+    expose:
+      - "8000" # Expose port internally only for match_engine
+    networks:
+      - internal_net
 
   redis:
     image: redis:6
     ports:
       - "6379:6379"
+    networks:
+      - internal_net
+
+networks:
+  internal_net:
+    driver: bridge
