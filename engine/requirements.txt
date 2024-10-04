@@ -4,3 +4,4 @@ protobuf
 fastapi
 uvicorn
 fastapi[standard]
+numpy

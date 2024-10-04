@@ -12,6 +12,7 @@ import copy
 from datetime import datetime
 import os
 import json
+import numpy as np
 
 
 class WebSocketManager:
@@ -143,6 +144,8 @@ async def place(request: dict):
 
     try:
         price = float(request.get("price"))
+        # price = np.round(price, 2)
+        # print(price, price % 0.01)
     except (TypeError, ValueError):
         return {"error": "Invalid input for price"}, 400
 
@@ -153,7 +156,8 @@ async def place(request: dict):
 
     if quantity <= 0:
         return {"error": "Invalid quantity"}, 400
-    if price <= 0 or (price * 100) % 1 != 0:
+    if price <= 0 or (price % 0.01) < 1e-15:
+        print()
         return {"error": "Invalid price"}, 400
     if side not in [1, -1]:
         return {"error": "Invalid side"}, 400
@@ -293,12 +297,14 @@ async def get_all_orders():
 
 @app.get("/trades")
 async def get_all_trades():
-    all_trades = []
-    trade_strings = r.lrange("trades", 0, -1)
-    for trade_string in trade_strings:
-        trade = r.hgetall(trade_string)
-        all_trades.append(trade)
-    return {"trades": all_trades}
+    trades = []
+    response = r.lrange("trades", 0, -1)
+    if response:
+        with r.pipeline() as pipe:
+            for trade_id in response:
+                pipe.hgetall(trade_id)
+            trades = pipe.execute()
+    return {"trades": json.dumps(trades)}
 
 
 if __name__ == "__main__":
