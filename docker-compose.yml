@@ -10,7 +10,7 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - PYTHONUNBUFFERED=1
-      - MATCH_ENGINE_URL=http://match_engine:8000 # Internal URL for match_engine
+      # - MATCH_ENGINE_URL=http://match_engine:8000 # Internal URL for match_engine
     ports:
       - "8000:8000" # Expose port 8000 for FastAPI (public-facing)
     volumes:

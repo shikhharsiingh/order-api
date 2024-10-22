@@ -6,6 +6,7 @@ from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.concurrency import run_in_threadpool
 import redis
+from redis import ConnectionPool
 from redis.exceptions import WatchError
 import asyncio
 import copy
@@ -19,6 +20,10 @@ class WebSocketManager:
     def __init__(self):
         self.active_connections: dict[str, WebSocket] = {}
 
+    async def broadcast(self, message: dict):
+        for connection in self.active_connections.values():
+            await connection.send_json(message)
+
     async def connect(self, client_id: str, websocket: WebSocket):
         await websocket.accept()
         self.active_connections[client_id] = websocket
@@ -26,14 +31,6 @@ class WebSocketManager:
     def disconnect(self, client_id: str):
         if client_id in self.active_connections:
             del self.active_connections[client_id]
-
-    async def send_personal_message(self, message: dict, client_id: str):
-        if client_id in self.active_connections:
-            await self.active_connections[client_id].send_json(message)
-
-    async def broadcast(self, message: dict):
-        for connection in self.active_connections.values():
-            await connection.send_json(message)
 
 
 app = FastAPI()
@@ -105,7 +102,7 @@ def handle_order_book_update(websocket: WebSocket):
         print("WebSocket disconnected")
     finally:
         # Cleanup tasks
-        listen_task.cancel()  # Cancel the listening task
+        # listen_task.cancel()  # Cancel the listening task
         pubsub.unsubscribe("order_book_snapshot")  # Unsubscribe when done
         print("Unsubscribed from pubsub and cleaned up resources.")
 
@@ -144,8 +141,6 @@ async def place(request: dict):
 
     try:
         price = float(request.get("price"))
-        # price = np.round(price, 2)
-        # print(price, price % 0.01)
     except (TypeError, ValueError):
         return {"error": "Invalid input for price"}, 400
 
@@ -156,7 +151,7 @@ async def place(request: dict):
 
     if quantity <= 0:
         return {"error": "Invalid quantity"}, 400
-    if price <= 0 or (price % 0.01) < 1e-15:
+    if price <= 0 or not (price * 100).is_integer():
         print()
         return {"error": "Invalid price"}, 400
     if side not in [1, -1]:
@@ -304,7 +299,7 @@ async def get_all_trades():
             for trade_id in response:
                 pipe.hgetall(trade_id)
             trades = pipe.execute()
-    return {"trades": json.dumps(trades)}
+    return {"trades": trades}
 
 
 if __name__ == "__main__":

@@ -6,8 +6,8 @@ import argparse
 
 
 BASE_URL = "http://localhost:8000"
-NUM_REQUESTS = 1000
-DURATION = 1  # 1 second
+NUM_REQUESTS = 5000
+# DURATION = 1  # 1 second
 
 
 def parse_arguments():
@@ -24,7 +24,7 @@ def parse_arguments():
 async def place_order():
     async with aiohttp.ClientSession() as session:
         data = {
-            "quantity": random.randint(1, 100),
+            "quantity": random.randint(1, 500),
             "price": round(random.uniform(0.01, 1000.00), 2),
             "side": random.choice([-1, 1]),
         }
@@ -55,7 +55,7 @@ async def run_test(sleep_time):
     order_ids = []
 
     for _ in range(NUM_REQUESTS):
-        action = random.choice(["place", "cancel", "modify"])
+        action = random.choice(["place"])
         if action == "place":
             tasks.append(asyncio.create_task(place_order()))
         elif action == "cancel" and order_ids:

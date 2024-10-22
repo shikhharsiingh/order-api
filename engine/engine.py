@@ -5,6 +5,7 @@ import uuid
 from assets.heap_of_queues import HeapOfQueues
 from functools import lru_cache
 import redis.asyncio as aioredis
+from redis.asyncio import ConnectionPool
 import json
 from fastapi import FastAPI
 from fastapi.concurrency import run_in_threadpool
@@ -19,8 +20,8 @@ app = FastAPI()
 redis_host = os.getenv("REDIS_HOST", "localhost")
 redis_port = int(os.getenv("REDIS_PORT", 6379))
 
-# Initialize the Redis client
-r = aioredis.Redis(host=redis_host, port=redis_port, db=0, decode_responses=True)
+pool = ConnectionPool.from_url(f"redis://{redis_host}:{redis_port}", max_connections=20)
+r = aioredis.Redis(connection_pool=pool, decode_responses=True)
 
 # Initialize the matching queues
 order_book = {1: HeapOfQueues(), -1: HeapOfQueues()}  # Buy side  # Sell side
@@ -260,7 +261,7 @@ async def process_order(order):
 
 
 async def process_priority_queue(remaining_quantity, priority, opp_side):
-    print("priority:", priority)
+    # print("priority:", priority)
     total_traded_quantity = 0
     queue_trades = {}
     while total_traded_quantity < remaining_quantity:
@@ -279,7 +280,7 @@ async def process_priority_queue(remaining_quantity, priority, opp_side):
             int, (opp_quantity, opp_traded_quantity, opp_alive)
         )
         opp_avg_price = float(opp_avg_price)
-        print(opp_quantity, opp_traded_quantity, opp_avg_price, opp_alive)
+        # print(opp_quantity, opp_traded_quantity, opp_avg_price, opp_alive)
         # If the order is already cancelled, stop, cannot match
         if not opp_alive:
             continue
@@ -287,7 +288,7 @@ async def process_priority_queue(remaining_quantity, priority, opp_side):
         # Match
         trade_quantity = min(remaining_quantity, opp_quantity - opp_traded_quantity)
         total_traded_quantity += trade_quantity
-        print(trade_quantity, total_traded_quantity, total_traded_quantity)
+        # print(trade_quantity, total_traded_quantity, total_traded_quantity)
 
         # Calculate opposite order's new data
         new_opp_traded_quantity = opp_traded_quantity + trade_quantity
@@ -308,7 +309,7 @@ async def process_priority_queue(remaining_quantity, priority, opp_side):
             new_opp_avg_price,
             int(is_alive),
         )
-        print(queue_trades)
+        # print(queue_trades)
 
     return total_traded_quantity, queue_trades
 
